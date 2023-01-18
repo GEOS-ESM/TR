@@ -17,3 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [1.0.0] - 2023-01-18
+
+### Added
+
+- Initial release of TR based on TR_GridComp code from GEOSchem_GridComp v1.11.0
