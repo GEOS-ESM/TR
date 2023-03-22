@@ -26,9 +26,17 @@ TR_table::
 # Name     Units        Long Name
 # -----    ------       --------------------------------
 aoa          days       'Age of air (uniform source) tracer'
-e90       'mol mol-1'   'Constant burden 90 day tracer'
-Rn222     'kg kg-1'     'Radon-222'
+aoa_nh       days       'Age of air northern hemisphere tracer'
+Be7       'kg kg-1'     'Beryllium radionuclide 7(Be)'
+Be10      'kg kg-1'     'Beryllium radionuclide 10(Be)'
 CH3I      'mol mol-1'   'Methyl iodide'
+e90       'mol mol-1'   'Constant burden 90 day tracer'
+nh_5      'mol mol-1'   'Northern Hemisphere 5 day tracer'
+nh_50     'mol mol-1'   'Northern Hemisphere 50 day tracer'
+Pb210     'kg kg-1'     'Lead-210'
+Rn222     'kg kg-1'     'Radon-222'
+SF6       'mol mol-1'   'Sulfur Hexafluoride tracer'
+st80_25   'mol mol-1'   'Stratospheric source 25 day tracer'
 ::
 
 pre_configured::
