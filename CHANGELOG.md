@@ -8,14 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Changed
+### Fixed
+### Removed
+### Deprecated
+
+## [next release]
 
 ### Changed
 
-### Fixed
-
-### Removed
-
-### Deprecated
+- Instead of calling the GMI routine for Solar Zenith Angle, now call a wrapper for the MAPL version
 
 ## [1.0.0] - 2023-01-18
 
