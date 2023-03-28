@@ -1745,7 +1745,7 @@ CONTAINS
    do n = 1, k%tr_count
 
      call TR_run_tracer_ ( myState%pet, myState%kit, myState%spec, myState%spec(n), myState%qa, &
-                           GRID, IMPORT, EXPORT,  nymd, nhms, cdt, CLOCK, __RC__ )
+                           GRID, IMPORT, EXPORT,  nymd, nhms, cdt, GC, CLOCK, __RC__ )
 
    end do
 
@@ -3238,7 +3238,7 @@ CONTAINS
 ! !INTERFACE:
 !
 
-   SUBROUTINE TR_run_tracer_ ( pet, kit, spec_array, spec, qa, grid_esmf, impChem, expChem, nymd, nhms, cdt, clock, rc )
+   SUBROUTINE TR_run_tracer_ ( pet, kit, spec_array, spec, qa, grid_esmf, impChem, expChem, nymd, nhms, cdt, gc, clock, rc )
 
 
 ! !USES:
@@ -3263,6 +3263,7 @@ CONTAINS
    TYPE(MAPL_SimpleBundle), INTENT(INOUT)       :: qa         ! passive tracer fields
    TYPE(ESMF_State),        INTENT(INOUT)       :: impChem    ! Import State
    TYPE(ESMF_State),        INTENT(INOUT)       :: expChem    ! Export State
+   TYPE(ESMF_GridComp),     INTENT(INOUT)       :: gc         ! Grid Component
    type(ESMF_Clock),        INTENT(INOUT)       :: clock      ! The clock
    INTEGER, OPTIONAL,       INTENT(  OUT)       :: RC         ! Error return code:
                                                               !  0 - all is well
@@ -4316,9 +4317,9 @@ CONTAINS
            DATA3d = DATA3d * MMR_to_VMR
          END IF
 
-         IF ( spec%GMI_dry_deposition )    CALL  TR_GMI_settle_and_depos( DATA3d, st_export_3d, st_export_2d, dd_export_2d, impChem, nymd, nhms, kit, cdt, spec, VMR_to_MMR)
+         IF ( spec%GMI_dry_deposition )    CALL  TR_GMI_settle_and_depos( DATA3d, st_export_3d, st_export_2d, dd_export_2d, impChem, kit, cdt, spec, gc, clock, VMR_to_MMR)
 
-         IF ( spec%GMI_wet_removal    )    CALL  TR_GMI_wet_removal(      DATA3d, wr_export_3d, wr_export_2d,               impChem,             kit, cdt, spec, VMR_to_MMR)
+         IF ( spec%GMI_wet_removal    )    CALL  TR_GMI_wet_removal(      DATA3d, wr_export_3d, wr_export_2d,               impChem, kit, cdt, spec,            VMR_to_MMR)
 
          IF ( (spec%unit_type == MMR_UNITS) .AND.  &
               (spec%GMI_dry_deposition .OR. spec%GMI_wet_removal) ) THEN
@@ -4333,13 +4334,13 @@ CONTAINS
            DATA3d = DATA3d * VMR_to_MMR
          END IF
 
-         IF ( spec%GOCART_settling       ) CALL  TR_GOCART_settling(      DATA3d, st_export_3d, st_export_2d,               impChem,             kit, cdt, spec, __RC__ )
+         IF ( spec%GOCART_settling       ) CALL  TR_GOCART_settling(      DATA3d, st_export_3d, st_export_2d,               impChem, kit, cdt, spec, __RC__ )
 
-         IF ( spec%GOCART_dry_deposition ) CALL  TR_GOCART_drydep(        DATA3d, dd_export_2d,                             impChem,             kit, cdt, spec, __RC__ )
+         IF ( spec%GOCART_dry_deposition ) CALL  TR_GOCART_drydep(        DATA3d, dd_export_2d,                             impChem, kit, cdt, spec, __RC__ )
 
-         IF ( spec%GOCART_wet_removal    ) CALL  TR_GOCART_wet_removal(   DATA3d, wr_export_3d, wr_export_2d,               impChem,             kit, cdt, spec, __RC__ )
+         IF ( spec%GOCART_wet_removal    ) CALL  TR_GOCART_wet_removal(   DATA3d, wr_export_3d, wr_export_2d,               impChem, kit, cdt, spec, __RC__ )
 
-         IF ( spec%GOCART_convection     ) CALL  TR_GOCART_convection(    DATA3d, cv_export_3d,                             impChem,             kit, cdt, spec, __RC__ )
+         IF ( spec%GOCART_convection     ) CALL  TR_GOCART_convection(    DATA3d, cv_export_3d,                             impChem, kit, cdt, spec, __RC__ )
 
          IF ( (spec%unit_type == VMR_UNITS) .AND.  &
               (spec%GOCART_settling .OR. spec%GOCART_dry_deposition .OR. spec%GOCART_wet_removal .OR. spec%GOCART_convection) ) THEN
@@ -4493,7 +4494,10 @@ CONTAINS
   END SUBROUTINE impose_surface_constraints
 
 
-  SUBROUTINE TR_GMI_settle_and_depos(data3d, settle_tend_3d, settle_tend_2d, drydep_tend_2d, impChem, nymd, nhms, kit, cdt, spec, VMR_to_MMR)
+  SUBROUTINE TR_GMI_settle_and_depos(data3d, settle_tend_3d, settle_tend_2d, drydep_tend_2d, impChem, kit, cdt, spec, gc, clock, VMR_to_MMR)
+
+    USE SZA_from_MAPL_mod,  ONLY : compute_SZA
+
     IMPLICIT NONE
 
     REAL*4,  POINTER, DIMENSION(:,:,:), INTENT(INOUT)    :: data3d         ! MEM- presumed mol/mol_of_moist_air
@@ -4501,10 +4505,11 @@ CONTAINS
     REAL*4,  POINTER, DIMENSION(:,:),   INTENT(INOUT)    :: settle_tend_2d ! kg/m2/s   column total
     REAL*4,  POINTER, DIMENSION(:,:),   INTENT(INOUT)    :: drydep_tend_2d ! kg/m2/s
     TYPE(ESMF_State),                   INTENT(INOUT)    :: impChem        ! Import State
-    INTEGER,                            INTENT(IN)       :: nymd, nhms
     TYPE(TR_TracerKit),     POINTER,    INTENT(IN)       :: kit            ! A set of values common to all passive tracers
     REAL,                               INTENT(IN)       :: cdt            ! chemical timestep (secs)
     TYPE(TR_TracerSpec),                INTENT(IN)       :: spec           ! Specification for a Passive Tracer
+    TYPE(ESMF_GridComp),                INTENT(INOUT)    :: gc             ! Grid Component - needed for MAPL SZA
+    TYPE(ESMF_Clock),                   INTENT(INOUT)    :: clock          ! The clock      - needed for MAPL SZA
     REAL*8,           DIMENSION(:,:,:), INTENT(IN)       :: VMR_to_MMR     ! both wrt moist air
 
     integer                      :: STATUS
@@ -4550,7 +4555,7 @@ CONTAINS
     REAL*8                        s_radius( kit%i1:kit%i2, kit%j1:kit%j2 )
     REAL*8                      s_velocity( kit%i1:kit%i2, kit%j1:kit%j2 )
 
-    ! this will be filled by set_cos_sza
+    ! this will be filled by compute_SZA
     REAL(KIND=DBL)  :: cosSolarZenithAngle( kit%i1:kit%i2, kit%j1:kit%j2 )
 
     ! these are just DBL copies of REAL fields
@@ -4664,8 +4669,8 @@ CONTAINS
               radswg(:,:) = swndsrf(:,:)       ! w m^{-2}
     frictionVelocity(:,:) =   ustar(:,:)       ! m s^{-1}
 
-
-   CALL set_cos_sza(nymd, nhms, kit, cosSolarZenithAngle)
+   call compute_SZA ( GC=gc, CLOCK=clock, tdt=cdt, label='TR:'//TRIM(spec%name), &
+                      SZA=cosSolarZenithAngle, __RC__ )
 
    IF ( associated(drydep_tend_2d) ) then
      allocate( snapshot_2d( i1:i2, j1:j2), __STAT__)
@@ -4691,28 +4696,6 @@ CONTAINS
    END IF
 
   END SUBROUTINE TR_GMI_settle_and_depos
-
-
-  SUBROUTINE set_cos_sza(nymd, nhms, kit, cosSolarZenithAngle)
-
-    USE GmiTimeControl_mod,            ONLY : GetSecondsFromJanuary1
-    USE GmiSolar_mod,                  ONLY : CalcCosSolarZenithAngle
-
-    IMPLICIT NONE
-
-    INTEGER,                       INTENT(IN)  :: nymd, nhms
-    TYPE(TR_TracerKit),  POINTER,  INTENT(IN)  :: kit        ! A set of values common to all passive tracers
-    REAL(KIND=DBL),                INTENT(OUT) :: cosSolarZenithAngle( kit%i1:kit%i2, kit%j1:kit%j2 )
-
-    INTEGER              :: ic
-    REAL(KIND=DBL)       :: dayOfYear
-    REAL, PARAMETER      :: secPerDay = 86400.0d0
-
-    CALL GetSecondsFromJanuary1(ic, nymd, nhms)
-    dayOfYear = (1.00*ic)/secPerDay
-    CALL CalcCosSolarZenithAngle(dayOfYear, kit%lats, kit%lons, cosSolarZenithAngle, &
-                                 kit%i1, kit%i2, kit%j1, kit%j2)
-  END SUBROUTINE set_cos_sza
 
 !
 ! Given a list of regional indices, and a 2D array, return a boolean array
