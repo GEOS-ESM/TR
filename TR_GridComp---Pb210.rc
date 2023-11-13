@@ -9,7 +9,7 @@
 # SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
 # ---------------------------
   src_mode: decay_of_another_species
-  src_species: Rn222_GO
+  src_species: Rn222
   src_add: TRUE
 
 # SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
