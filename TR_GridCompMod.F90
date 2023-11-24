@@ -4669,8 +4669,11 @@ CONTAINS
               radswg(:,:) = swndsrf(:,:)       ! w m^{-2}
     frictionVelocity(:,:) =   ustar(:,:)       ! m s^{-1}
 
+! SZA (don't forget to take the cosine)
+! ---
    call compute_SZA ( GC=gc, CLOCK=clock, tdt=cdt, label='TR:'//TRIM(spec%name), &
                       SZA=cosSolarZenithAngle, __RC__ )
+   cosSolarZenithAngle = COS( cosSolarZenithAngle * MAPL_DEGREES_TO_RADIANS )
 
    IF ( associated(drydep_tend_2d) ) then
      allocate( snapshot_2d( i1:i2, j1:j2), __STAT__)

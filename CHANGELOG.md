@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reformatted the YAML ExtData file, zero diff
 
 ### Fixed
+
+- Bug fix for GMI dry deposition, related to solar zenith angle
+
 ### Removed
 ### Deprecated
 
