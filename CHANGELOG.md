@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reformatted the YAML ExtData file, zero diff
 
 ### Fixed
+
+- Update CI to use Baselibs default from the CircleCI orb
+
 ### Removed
 ### Deprecated
 
