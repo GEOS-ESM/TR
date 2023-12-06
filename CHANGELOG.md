@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Update CI to use Baselibs default from the CircleCI orb
 - Bug fix for GMI dry deposition, related to solar zenith angle
+
 
 ### Removed
 ### Deprecated
