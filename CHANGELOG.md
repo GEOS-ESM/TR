@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Reformatted the YAML ExtData file, zero diff
+- Changed Be and Pb species to use GOCART convection (instead of MOIST), and GOCART approach (instead of GMI) for settling, dry dep and wet removal
 
 ### Fixed
 
 - Update CI to use Baselibs default from the CircleCI orb
+- Bug fix for GMI dry deposition, related to solar zenith angle
+
 
 ### Removed
 ### Deprecated
