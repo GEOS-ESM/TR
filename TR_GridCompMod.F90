@@ -4471,6 +4471,7 @@ CONTAINS
             spec%constraints(n)%value_array(:,:) = 0.0    ! Allow user to set this fallback value?
           ENDWHERE
 
+          call ESMF_FieldDestroy(fld, noGarbage=.true., _RC)
           DEALLOCATE( fld, fld_ptr, __STAT__)
           !-----
         END IF
