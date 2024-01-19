@@ -291,6 +291,9 @@
 
      integer                         :: pet               ! ID of the persistent execution thread
 
+     LOGICAL                         :: strict_child_timing ! Call a barrier before and after each child is run
+                                                            ! Only use this to test timings, not operationally
+
   END TYPE TR_State
 
 ! Hook for the ESMF
@@ -362,6 +365,7 @@ CONTAINS
     logical                        :: gocart_conv
     logical                        :: lai_needed
     logical                        :: stOX_loss_needed
+    type (ESMF_Config)             :: myCF
 
     character(len=ESMF_MAXSTR), allocatable   :: str_array(:)  ! to hold unique ExtData entries
     integer                        :: s_count                  ! number of entries in str_array
@@ -450,6 +454,16 @@ CONTAINS
 !   --------------------------
     call ESMF_UserCompSetInternalState ( GC, 'TR_STATE', wrap, STATUS )
     VERIFY_(STATUS)
+
+!   Read resource settings
+!   ----------------------
+    myCF = ESMF_ConfigCreate(__RC__)
+    call   ESMF_ConfigLoadFile    (myCF, 'TR_GridComp.rc', __RC__ )
+    call   ESMF_ConfigGetAttribute(myCF, myState%strict_child_timing, Default=.FALSE., Label="strict_child_timing:", __RC__ )
+    call   ESMF_ConfigDestroy     (myCF, __RC__)
+
+    IF(MAPL_AM_I_ROOT()) PRINT *, TRIM(Iam)//": strict_child_timing =", myState%strict_child_timing
+
   
 !                         ------------------
 !                         MAPL Data Services
@@ -1246,12 +1260,6 @@ CONTAINS
 !   VERIFY_(STATUS)
 
 
-!   Set the Profiling timers
-!   ------------------------
-    CALL MAPL_TimerAdd(GC, NAME="INITIALIZE", __RC__ )
-    CALL MAPL_TimerAdd(GC, NAME="RUN",        __RC__ )
-    CALL MAPL_TimerAdd(GC, NAME="FINALIZE",   __RC__ )
-
 !   Generic Set Services
 !   --------------------
     call MAPL_GenericSetServices ( GC, __RC__ )
@@ -1610,6 +1618,8 @@ CONTAINS
 
     logical                       :: verbose=.FALSE.
 
+    type (ESMF_VM)                :: VM
+
 
 ! For NTYPE
 # include "gmi_emiss_constants.h"
@@ -1739,13 +1749,26 @@ CONTAINS
 
    END IF
 
+   IF ( myState%strict_child_timing ) THEN
+     call ESMF_VMGetCurrent ( VM=VM, __RC__ )
+     call ESMF_VMBarrier(VM, __RC__ )
+   END IF
+
 
 !  Run each tracer (source and sink)
 !  ---------------------------------
    do n = 1, k%tr_count
 
+     call MAPL_TimerOn( genState, trim(myState%spec(n)%name))
+
      call TR_run_tracer_ ( myState%pet, myState%kit, myState%spec, myState%spec(n), myState%qa, &
                            GRID, IMPORT, EXPORT,  nymd, nhms, cdt, GC, CLOCK, __RC__ )
+
+     IF ( myState%strict_child_timing ) THEN
+       call ESMF_VMBarrier(VM, __RC__ )
+     END IF 
+
+     call MAPL_TimerOff(genState, trim(myState%spec(n)%name))
 
    end do
 
