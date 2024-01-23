@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Added a timer for each tracer, and the option of 'strict' timing (with a barrier before and after each tracer)
+
 ### Changed
 
 - Reformatted the YAML ExtData file, zero diff
