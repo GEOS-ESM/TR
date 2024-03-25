@@ -630,10 +630,14 @@ CONTAINS
 !       temperatures below -18 C, so at colder temperatures, hold the
 !       resistance fixed.
 !       -----------------------------------------------------------------
-
-        rt = 1000.0d0 * Exp (-tempc1 - 4.0d0)
-
-        if (tempc1 < -18.0d0) rt = 1.2d9
+!
+!       rt = 1000.0d0 * Exp (-tempc1 - 4.0d0)
+!
+!       if (tempc1 < -18.0d0) rt = 1.2d9
+! LDO - Change to Zhang et al. 2003 resistance temperature dependence 
+        rt = 1.0d0
+        if (tempc1 < -1.0d0) rt = Exp (0.2d0*(-1.0d0 - tempc1))
+        rt = Min (rt, 2.0d0)
 
 
 !       ------------------------------------------------------------------
