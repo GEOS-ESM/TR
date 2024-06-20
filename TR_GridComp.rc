@@ -1,0 +1,8 @@
+#
+# Resource file for TR (Passive Tracer Gridded Component)
+
+# Use only for diagnostic timing tests:
+# --------------------------------------------------
+ strict_tracer_timing: .FALSE.
+
+

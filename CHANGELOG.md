@@ -6,12 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 ### Added
 ### Changed
 ### Fixed
 ### Removed
 ### Deprecated
+
+## [1.2.0] - 2024-06-20
+
+### Added
+
+- Added a timer for each tracer, and the option of 'strict' timing (with a barrier before and after each tracer)
+
+### Changed
+
+- Reformatted the YAML ExtData file, zero diff
+- Changed Be and Pb species to use GOCART convection (instead of MOIST), and GOCART approach (instead of GMI) for settling, dry dep and wet removal; these are now the default settings
+- Updated the resistance temperature dependence in the GMI DryDep routine
+
+### Fixed
+
+- Update CI to use v2 orb
+- Bug fix for GMI dry deposition, related to solar zenith angle
+
 
 ## [1.1.0] - 2023-06-09
 
