@@ -12,7 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update GitHub actions to use v4
 
 ### Fixed
+
+- Changed default SF6 emissions; instead of just repeating 2008 we now use 1969-2008 EDGAR values
+
 ### Removed
+
+- Removed references to w_c; requires Chem_Settling2 routine in Chem_Shared
+
 ### Deprecated
 
 ## [1.2.0] - 2024-06-20
