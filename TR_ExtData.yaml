@@ -4,7 +4,7 @@ Collections:
   TR.CMIP6_CO_BB.emis.monthly_clim:            { template: ExtData/g5chem/sfc/CMIP6.CO_bb.x1440_y720_t12.nc4                     }
   TR.CMIP6_CO_BB-NMVOC.emis.monthly_clim:      { template: ExtData/g5chem/sfc/CMIP6.CO_bbnmvoc.x1440_y720_t12.nc4                }
   TR.M2G_CO_BIO-NMVOC.emis.monthly_clim:       { template: ExtData/g5chem/sfc/M2G.CO_bionmvoc.x720_y360_t12.nc4                  }
-  TR.EDGAR-IPCC_SF6.emis.monthly_clim:         { template: ExtData/g5chem/sfc/SF6/EDGAR_IPCC.sf6.x144_y91_t12.2008.nc            }
+  TR.EDGAR-IPCC_SF6.emis.monthly_clim:         { valid_range: "1969-01-15T00:00/2008-12-15T12:00", template: ExtData/g5chem/sfc/SF6/EDGAR_IPCC.sf6.x144_y91_t12.%y4.nc }
   TR.Koch_beryllium.tend.annual_clim:          { template: ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4                    }
   TR.CO.emis.monthly_clim:                     { template: ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc                      }
   TR.Rn222_Zhang-Liu.emis.monthly_clim:        { template: ExtData/g5chem/sfc/Rn222.Zhang_Liu_et_al.x720_y360_t12.nc4            }

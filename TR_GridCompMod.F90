@@ -34,7 +34,7 @@
 
    USE         WetRemovalMod,  ONLY: WetRemovalGOCART             ! in Chem_Shared
    USE         ConvectionMod,  ONLY: convection, set_vud          ! in Chem_Shared
-   USE      Chem_SettlingMod,  ONLY: Chem_Settling                ! in Chem_Shared
+   USE      Chem_SettlingMod,  ONLY: Chem_Settling2               ! in Chem_Shared
    USE      DryDepositionMod,  ONLY: DryDepositionGOCART          ! in Chem_Shared
 
    USE             VegLaiMod,  ONLY: Decode_Land_Types, Decode_XLAI  ! in Chem_Shared
@@ -99,7 +99,6 @@
     INTEGER                            :: i1,i2,j1,j2        ! local index bounds
     REAL*8, POINTER, DIMENSION(:,:)    :: lats  => NULL()    ! Latitudes in degrees
     REAL*8, POINTER, DIMENSION(:,:)    :: lons  => NULL()    ! Longitudes in degrees, 0 to 360
-    REAL                               :: ptop               ! top pressure in Pa
     ! Only if needed for Dry Deposition:
     INTEGER, POINTER, DIMENSION(:,:)   :: ireg  => NULL()    ! Land type counts
     INTEGER, POINTER, DIMENSION(:,:,:) :: iland => NULL()    ! Land types
@@ -1457,9 +1456,6 @@ CONTAINS
      k%lats = lats * DEGPRAD
      k%lons = lons * DEGPRAD
      WHERE ( k%lons < 0.0 ) k%lons = k%lons + 360.0d0
-
-!    Hardcode Ptop, just as for w_c 
-     k%ptop = 1.0  ! Pa
 
 !  Allocate storage for all of the Tracer Specs
 !  --------------------------------------------
@@ -5292,11 +5288,12 @@ CONTAINS
 
     integer :: i1, i2, j1, j2, km, n1, n2, nbins
     integer :: rhFlag
-    real,              pointer  :: tracer_radius(:), tracer_rho_p(:)
-    type(Chem_Array),  pointer  :: tracer_sedimentation(:)  ! EXPORT: Black Carbon Sedimentation
-    type(Chem_Bundle), pointer  :: w_c
+    real                        :: tracer_radius, tracer_rho_p
+    type(Chem_Array),  pointer  :: tracer_sedimentation     ! naming from BC GridComp
 
     real, pointer, dimension(:,:)   :: hsurf
+    real, pointer, dimension(:,:,:) :: delp
+    real, pointer, dimension(:,:,:) :: rh
 
     real*4, allocatable, dimension(:,:,:) :: snapshot
 
@@ -5316,17 +5313,6 @@ CONTAINS
     n2 = 1
     nbins = 1
 
-    ! w_c
-    ! Chem_Settling() is tightly coupled to the Chem_Bundle (w_c) approach.
-    ! The official way to create w_c is to call  Chem_BundleCreate_(), passing it a chemReg.
-    ! (see GOCART_GridCompMod.F90)
-    ! We simplify by allocating only the components that Chem_Settling() will use.
-    ! Only 1 element of qa, since we handle 1 tracer in this call
-    allocate( w_c, __STAT__ )
-    allocate( w_c%qa(1), __STAT__)
-
-    w_c%qa(1)%data3d => data3d
-
     if ( associated(tendency3d) .OR.  associated(tendency2d) ) then
       allocate( snapshot( i1:i2, j1:j2, 1:km), __STAT__)
       snapshot = data3d
@@ -5338,41 +5324,39 @@ CONTAINS
     call MAPL_GetPointer ( impChem, tmpu,     'T',        __RC__ )
     call MAPL_GetPointer ( impChem, rhoa,     'AIRDENS',  __RC__ )
     call MAPL_GetPointer ( impChem, hghte,    'ZLE',      __RC__ )
-    call MAPL_GetPointer ( impChem, w_c%delp, 'DELP',     __RC__ )
-    call MAPL_GetPointer ( impChem, w_c%rh,   'RH2',      __RC__ )
+    call MAPL_GetPointer ( impChem, delp,     'DELP',     __RC__ )
+    call MAPL_GetPointer ( impChem, rh,       'RH2',      __RC__ )
 
     hsurf => hghte(i1:i2,j1:j2,km) ! Recall: GEOS-5 has edges with k in [0,km]
 
-    allocate( tracer_radius(nbins), tracer_rho_p(nbins), tracer_sedimentation(nbins), __STAT__ )   ! nbins == 1
+    allocate( tracer_sedimentation, __STAT__ )
 
-    tracer_sedimentation(1)%data2d => NULL()   ! If you want the export, allocate data2d(i1:i2,j1:j2)
+    tracer_sedimentation%data2d => NULL()   ! If you want the export, allocate data2d(i1:i2,j1:j2)
 
-    tracer_radius(:) = spec%GOCART_radius     ! radius for settling [m]
-    tracer_rho_p(:)  = spec%GOCART_rho_p      ! density for setting [kg m-3]
+    tracer_radius    = spec%GOCART_radius     ! radius for settling [m]
+    tracer_rho_p     = spec%GOCART_rho_p      ! density for setting [kg m-3]
     rhFlag           = spec%GOCART_rh_effect  ! settle like dry particles (0) or options 1,2,3,4
 
-    call Chem_Settling ( i1, i2, j1, j2, km, n1, n2, nbins, rhFlag, &
-                         tracer_radius, tracer_rho_p, cdt, w_c, tmpu, rhoa, hsurf,    &
-                         hghte, tracer_sedimentation, rc )
-    VERIFY_(RC)
+    call Chem_Settling2 ( i1, i2, j1, j2, km, rhFlag, &
+                          tracer_radius, tracer_rho_p, cdt, delp, rh, tmpu, rhoa, hsurf,    &
+                          hghte, data3d, tracer_sedimentation, rc )
+    VERIFY_(rc)
 
     if ( associated(tendency3d) .OR.  associated(tendency2d) ) then
 
       if ( associated(tendency3d) ) then
-        tendency3d =     (data3d-snapshot) * w_c%delp / (MAPL_GRAV*cdt)
+        tendency3d =     (data3d-snapshot) * delp / (MAPL_GRAV*cdt)
       end if
 
       if ( associated(tendency2d) ) then
-        tendency2d = SUM((data3d-snapshot) * w_c%delp / (MAPL_GRAV*cdt), 3)
+        tendency2d = SUM((data3d-snapshot) * delp / (MAPL_GRAV*cdt), 3)
       end if
 
       deallocate( snapshot, __STAT__)
 
     end if
 
-    deallocate( tracer_radius, tracer_rho_p, tracer_sedimentation, __STAT__ )
-    deallocate( w_c%qa, __STAT__)
-    deallocate( w_c, __STAT__ )
+    deallocate( tracer_sedimentation, __STAT__ )
 
     RETURN_(ESMF_SUCCESS)
 
