@@ -8,8 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 ### Changed
+### Fixed
+### Removed
+### Deprecated
+
+## [1.2.1] - 2026-04-16
+
+### Changed
 
 - Update GitHub actions to use v4
+- Added clarification to YAML ExtData file
 
 ### Fixed
 
@@ -17,9 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Removed references to w_c; requires Chem_Settling2 routine in Chem_Shared
+- Removed references to w_c; requires Chem_Settling2 routine in Chem_Shared (GEOSchem_GridComp v1.16.2)
 
-### Deprecated
 
 ## [1.2.0] - 2024-06-20
 

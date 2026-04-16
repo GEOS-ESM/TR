@@ -1,10 +1,10 @@
 Collections:
+# Climatologies
   TR.CMIP6_CO_ANTHRO.emis.monthly_clim:        { template: ExtData/g5chem/sfc/CMIP6.CO_anthro.x720_y360_t12.nc4                  }
   TR.CMIP6_CO_ANTHRO-NMVOC.emis.monthly_clim:  { template: ExtData/g5chem/sfc/CMIP6.CO_anthronmvoc.x720_y360_t12.nc4             }
   TR.CMIP6_CO_BB.emis.monthly_clim:            { template: ExtData/g5chem/sfc/CMIP6.CO_bb.x1440_y720_t12.nc4                     }
   TR.CMIP6_CO_BB-NMVOC.emis.monthly_clim:      { template: ExtData/g5chem/sfc/CMIP6.CO_bbnmvoc.x1440_y720_t12.nc4                }
   TR.M2G_CO_BIO-NMVOC.emis.monthly_clim:       { template: ExtData/g5chem/sfc/M2G.CO_bionmvoc.x720_y360_t12.nc4                  }
-  TR.EDGAR-IPCC_SF6.emis.monthly_clim:         { valid_range: "1969-01-15T00:00/2008-12-15T12:00", template: ExtData/g5chem/sfc/SF6/EDGAR_IPCC.sf6.x144_y91_t12.%y4.nc }
   TR.Koch_beryllium.tend.annual_clim:          { template: ExtData/g5chem/L72/Koch.beryllium.x144_y91_z72.nc4                    }
   TR.CO.emis.monthly_clim:                     { template: ExtData/g5chem/sfc/RETRO.co.x144_y91_t12.2000.nc                      }
   TR.Rn222_Zhang-Liu.emis.monthly_clim:        { template: ExtData/g5chem/sfc/Rn222.Zhang_Liu_et_al.x720_y360_t12.nc4            }
@@ -15,6 +15,9 @@ Collections:
   TR.MASK_RADON:                               { template: ExtData/g5chem/sfc/RADON.region_mask.x540_y361.2001.nc                }
   TR.MASK_HTAP2:                               { template: ExtData/g5chem/sfc/HTAP2.region_map_modified_coastlines.x720_y360.nc4 }
   TR.UNITY:                                    { template: ExtData/g5chem/sfc/unity.x144_y91.nc                                  }
+
+# Time Series
+  TR.EDGAR-IPCC_SF6.emis.monthly.1969-2008:    { valid_range: "1969-01-15T00:00/2008-12-15T12:00", template: ExtData/g5chem/sfc/SF6/EDGAR_IPCC.sf6.x144_y91_t12.%y4.nc }
 
 Samplings:
   TR.daily:      { time_interpolation: true , update_frequency: PT24H,  update_offset: PT12H,  update_reference_time: '0', extrapolation: none            }
@@ -36,7 +39,7 @@ Exports:
   CO_CMIP6_BB_NMVOC:             { variable: co_bbnmvoc,      collection: TR.CMIP6_CO_BB-NMVOC.emis.monthly_clim,     regrid: CONSERVE, sample: TR.daily_wrap }
   CO_M2G_BIOG_NMVOC:             { variable: co_bionmvoc,     collection: TR.M2G_CO_BIO-NMVOC.emis.monthly_clim,      regrid: CONSERVE, sample: TR.daily_wrap }
   #
-  SRC_2D_SF6:                    { variable: sf6,             collection: TR.EDGAR-IPCC_SF6.emis.monthly_clim,        regrid: CONSERVE, sample: TR.daily_wrap }
+  SRC_2D_SF6:                    { variable: sf6,             collection: TR.EDGAR-IPCC_SF6.emis.monthly.1969-2008,   regrid: CONSERVE, sample: TR.daily_wrap }
   SRC_2D_Rn222:                  { variable: rnemis,          collection: TR.Rn222_Zhang-Liu.emis.monthly_clim,       regrid: BILINEAR, sample: TR.daily_wrap }
 # SRC_2D_Rn222:  prior version   { variable: Rn222_emissions, collection: TR.Rn222_Jacob.emis.annual_clim,            regrid: CONSERVE, sample: TR.constant   }
   SRC_2D_CH3I:                   { variable: unity_array,     collection: TR.UNITY,       linear_transformation: [ 0.0, 2.35694e-21 ],  sample: TR.constant   }
