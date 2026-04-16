@@ -12,6 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Deprecated
 
+## [1.2.1] - 2026-04-16
+
+### Changed
+
+- Update GitHub actions to use v4
+- Added clarification to YAML ExtData file
+
+### Fixed
+
+- Changed default SF6 emissions; instead of just repeating 2008 we now use 1969-2008 EDGAR values
+
+### Removed
+
+- Removed references to w_c; requires Chem_Settling2 routine in Chem_Shared (GEOSchem_GridComp v1.16.2)
+
+
 ## [1.2.0] - 2024-06-20
 
 ### Added
