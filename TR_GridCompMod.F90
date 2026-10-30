@@ -188,6 +188,7 @@
 
         CHARACTER(LEN=255) :: snk_horiz       ! Horizontal spec of tracer sink
         LOGICAL, POINTER :: snk_mask_horiz(:,:) => NULL()    ! regional mask
+        LOGICAL          :: snk_mask_horiz_ready             ! Flag to avoid reading a mask more than once
 
         CHARACTER(LEN=255) :: snk_vert        ! Vertical spec of tracer sink
         INTEGER :: snk_lev1, snk_lev2         ! Level bounds for tracer sink
@@ -356,6 +357,7 @@ CONTAINS
     character(len=ESMF_MAXSTR)     :: rcfilen
     character(len=ESMF_MAXSTR)     :: src_mode
     character(len=ESMF_MAXSTR)     :: snk_mode
+    character(len=ESMF_MAXSTR)     :: snk_horiz
     character(len=ESMF_MAXSTR)     :: loss_species
     character(len=ESMF_MAXSTR)     :: regions_ExtData_entry
     character(len=ESMF_MAXSTR)     :: friend_list
@@ -1053,6 +1055,20 @@ CONTAINS
        IF( TRIM(loss_species) == "OX") THEN
          stOX_loss_needed = .TRUE.
        END IF
+     END IF
+
+     call ESMF_ConfigGetAttribute ( myState%CF, label='snk_horiz:', value=snk_horiz, default='DEFAULT_HORIZ',  __RC__ )
+
+     IF ( TRIM(snk_horiz) == "mask" ) THEN
+
+       call MAPL_AddImportSpec(GC,                                       &
+            SHORT_NAME = 'SNK_HORIZ_MASK_'//TRIM(r%vname(n)),            &
+            LONG_NAME  = 'sink_mask_for_'//TRIM(r%vname(n)),             &
+!            UNITS      = 'units',                                       &
+            DIMS       = MAPL_DimsHorzOnly,                              &
+            VLOCATION  = MAPL_VLocationNone,                             &
+            RESTART    = MAPL_RestartSkip,                               &
+                                                          __RC__ )
      END IF
 
      call ESMF_ConfigGetAttribute ( myState%CF, label='GOCART_convection:',  value=gocart_conv, default=.FALSE., __RC__ )
@@ -2854,6 +2870,7 @@ CONTAINS
      IF(TRIM(spec%snk_horiz) == "all" ) THEN
        spec_ok = .TRUE.
        spec%snk_mask_horiz(:,:) = .TRUE.
+       spec%snk_mask_horiz_ready = .TRUE.
      END IF
 
 !
@@ -2871,6 +2888,8 @@ CONTAINS
 !      Set up the horizontal mask
        spec%snk_mask_horiz(:,:) = ( kit%lats >= limitS .AND. &
                                     kit%lats <= limitN       )
+
+       spec%snk_mask_horiz_ready = .TRUE.
 
      END IF
 
@@ -2898,17 +2917,15 @@ CONTAINS
        WHERE ( kit%lats < limitS .OR. &
                kit%lats > limitN      )   spec%snk_mask_horiz = .FALSE.
 
+       spec%snk_mask_horiz_ready = .TRUE.
+
      END IF
 !
-!    MASKS
+!    MASK  - (we cannot read the mask via ExtData until the RUN routine)
 !
-     IF(TRIM(spec%snk_horiz) == "masks" ) THEN
+     IF(TRIM(spec%snk_horiz) == "mask" ) THEN
        spec_ok = .TRUE.
-
-       IF(MAPL_AM_I_ROOT()) PRINT *,myname,": TRACER snk MASKS not implemented yet"
-       CALL final_(41)
-       VERIFY_(rc)
-
+       spec%snk_mask_horiz_ready = .FALSE.   ! set TRUE after we read it
      END IF
 
      IF ( .NOT. spec_ok ) THEN
@@ -3368,10 +3385,11 @@ CONTAINS
    real, pointer, dimension(:,:,:) ::  airdens_dry
    real, pointer, dimension(:,:)   ::  area
    real, pointer, dimension(:,:,:) ::  src_field
-   real, pointer, dimension(:,:)   ::  src_ext_2d  ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  src_ext_3d  ! For getting ExtData pointer
-   real, pointer, dimension(:,:,:) ::  stOX_loss   ! For getting ExtData pointer
-   real, pointer, dimension(:,:)   ::  dd_OX       ! For getting ExtData pointer
+   real, pointer, dimension(:,:)   ::  src_ext_2d    ! For getting ExtData pointer
+   real, pointer, dimension(:,:,:) ::  src_ext_3d    ! For getting ExtData pointer
+   real, pointer, dimension(:,:,:) ::  stOX_loss     ! For getting ExtData pointer
+   real, pointer, dimension(:,:)   ::  dd_OX         ! For getting ExtData pointer
+   real, pointer, dimension(:,:)   ::  snk_ext_2d    ! For getting ExtData pointer
 
    real, pointer, dimension(:,:,:) ::  st_export_3d   ! For settling diagnostic
    real, pointer, dimension(:,:)   ::  st_export_2d   ! For settling diagnostic (col total)
@@ -3707,6 +3725,20 @@ CONTAINS
      END IF
 
 !    Then add in the horizontal extent
+
+!    If the horiz mask has not been read yet:
+     IF((TRIM(spec%snk_horiz) == "mask") .AND. (spec%snk_mask_horiz_ready .EQV. .FALSE.)) THEN
+
+       call MAPL_GetPointer( impChem, snk_ext_2d, 'SNK_HORIZ_MASK_'//TRIM(spec%name), __RC__ )
+
+       ! Expecting 0.0 for NO and 1.0 for YES
+       spec%snk_mask_horiz = .FALSE.
+       WHERE ( snk_ext_2d .GT. 0.5 )  spec%snk_mask_horiz = .TRUE.
+
+       spec%snk_mask_horiz_ready = .TRUE.
+
+     END IF
+
      DO k=1,km
        snk_mask3d(:,:,k) = snk_mask3d(:,:,k) .AND. spec%snk_mask_horiz(:,:) 
      END DO
