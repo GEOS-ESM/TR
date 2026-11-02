@@ -14,6 +14,7 @@ Collections:
   TR.MASK_ARCTAS:                              { template: ExtData/AeroCom/sfc/ARCTAS.region_mask.x540_y361.2008.nc              }
   TR.MASK_RADON:                               { template: ExtData/g5chem/sfc/RADON.region_mask.x540_y361.2001.nc                }
   TR.MASK_HTAP2:                               { template: ExtData/g5chem/sfc/HTAP2.region_map_modified_coastlines.x720_y360.nc4 }
+  TR.MASK_MCA:                                 { template: ExtData/g5chem/sfc/mca_mask.nc                                        }
   TR.UNITY:                                    { template: ExtData/g5chem/sfc/unity.x144_y91.nc                                  }
 
 # Time Series
@@ -55,6 +56,7 @@ Exports:
   TR_regionMask:                 { variable: REGION_MASK,     collection: TR.MASK_RADON,                              regrid: VOTE,     sample: TR.constant   }
   TR_regionMask2:                { variable: REGION_MASK,     collection: TR.MASK_ARCTAS,                             regrid: VOTE,     sample: TR.constant   }
   HTAP2_REGION_MASK_COASTAL_MOD: { variable: region_map,      collection: TR.MASK_HTAP2,                              regrid: VOTE,     sample: TR.constant   }
+  SNK_HORIZ_MASK_mca:            { variable: region_map,      collection: TR.MASK_MCA,                                regrid: VOTE,     sample: TR.constant   }
   # In case GMI is not running (stOX uses these):
   DD_OX:                         {                            collection: /dev/null                                                                           }
   OX_TR:                         {                            collection: /dev/null                                                                           }
