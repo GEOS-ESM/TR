@@ -1,0 +1,37 @@
+#
+# Resource file for Monsoon Customized Age (MCA) tracer
+# with sink restricted to two zones in the boundary layer
+#
+
+# SHOULD THE TRACER SOURCE BE ADDED FIRST, OR THE SINK APPLIED FIRST
+# ---------------------------
+  first_phase: source
+
+# SOURCE - MODE:  constant  |  file2d  |  file3d  |  model_field  |  maintain_mixing_ratio
+# ---------------------------
+  src_mode: constant
+  src_value: 1 timestep
+  src_add: TRUE
+
+# SOURCE - Horizontal coverage: all  |  lat_zone  |  latlon_box
+# ---------------------------
+  src_horiz: all
+
+# SOURCE - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere
+# ---------------------------
+  src_vert: all
+
+
+# SINK - MODE:  constant  |  efolding  |  halflife  |  none
+# ---------------------------
+  snk_mode: constant
+  snk_value: 0 days
+
+# SINK - Horizontal coverage:  all  |  lat_zone  |  latlon_box  |  mask
+# ---------------------------
+# When using 'mask', ExtData must provide SNK_HORIZ_MASK_<tracer-name>
+  snk_horiz: mask
+
+# SINK - Vertical coverage:  all  |  surface  |  levels  |  pressures  |  troposphere  | stratosphere | boundary_layer
+# ---------------------------
+  snk_vert: boundary_layer

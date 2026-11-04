@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Deprecated
 
+## [1.2.2] - 2026-11-04
+
+### Added
+
+- Added 'mask' as an option for snk_horiz, allowing depletion of the tracer in an arbitrary set of gridboxes; added 'mca' tracer as an example of usage
+
+### Changed
+
+- Update GitHub actions to v5 orb
+
 ## [1.2.1] - 2026-04-16
 
 ### Changed
