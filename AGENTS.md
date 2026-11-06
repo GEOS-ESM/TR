@@ -9,7 +9,7 @@ The tracers are chosen by resource files; the code is generic.
 
 ## Placement (GEOSgcm fixture, `components.yaml` @ `0f2e0fb`, key `TR`)
 `src/Components/@GEOSgcm_GridComp/GEOSagcm_GridComp/GEOSphysics_GridComp/@GEOSchem_GridComp/@TR`.
-Parent: [Chemistry `AGENTS.md`](../AGENTS.md), [Chemistry architecture](../docs/ARCHITECTURE.md).
+Parent: Chemistry `AGENTS.md` (`../AGENTS.md` in the fixture), Chemistry architecture (`../docs/ARCHITECTURE.md` in the fixture).
 
 ## Documents
 | File | Content |

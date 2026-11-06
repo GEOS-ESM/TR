@@ -8,7 +8,7 @@
 Other fixtures (for example GEOSadas, GEOSldas) may place this repository
 elsewhere; paths inside this repository do not change.
 
-Parent: the Chemistry gridded component ([Chemistry architecture](../../docs/ARCHITECTURE.md),
+Parent: the Chemistry gridded component (Chemistry architecture (`../../docs/ARCHITECTURE.md` in the fixture),
 section 2.3 for nested repositories, section 3 for how children are added and run).
 This document does not repeat it. The repository holds one gridded component module plus three helper modules, and no children.
 
