@@ -1,16 +1,23 @@
 # TR (passive tracers) architecture
 
 **Audience:** coding agents and developers working on `TR`.
-**Describes:** the MAPL2 line, branch `develop`.
-**Verified against:** `TR` @ `9e895f9` (2026-11-06).
-**Placement:** as in the GEOSgcm fixture (`components.yaml` @ `0f2e0fb`), key `TR`:
+**Describes:** the MAPL3 line, branch `release/MAPL-v3`.
+**Verified against:** `TR` @ `f4da9bc` (2026-11-06).
+**Placement:** as in the GEOSgcm fixture (`components.yaml` @ `f50622d`), key `TR`:
 `src/Components/@GEOSgcm_GridComp/GEOSagcm_GridComp/GEOSphysics_GridComp/@GEOSchem_GridComp/@TR`.
 Other fixtures (for example GEOSadas, GEOSldas) may place this repository
 elsewhere; paths inside this repository do not change.
 
-Parent: the Chemistry gridded component (Chemistry architecture (`../../docs/ARCHITECTURE.md` in the fixture),
-section 2.3 for nested repositories, section 3 for how children are added and run).
-This document does not repeat it. The repository holds one gridded component module plus three helper modules, and no children.
+Parent: the Chemistry gridded component. Its architecture document is `../../docs/ARCHITECTURE.md` in the fixture; it covers nested repositories and how children are added and run.
+This document does not repeat the parent's content. The repository holds one gridded component module plus three helper modules, and no children.
+
+> **Build status on this line:** not built, not ported. On `release/MAPL-v3`, `../CMakeLists.txt`
+> (`@GEOSchem_GridComp/CMakeLists.txt`) builds only `GOCART` (`esma_add_subdirectories(GOCART)`, under the comment
+> "Restore subdirs as components are ported to MAPL3."); `TR` appears only in commented-out lines (the subdirectory list and the `DEPENDENCIES` of the commented-out library block). The code in this
+> repository is the MAPL2 code, kept for a later port. `snk_horiz: masks` aborts on this line ("TRACER snk MASKS not implemented yet", `TR_init_tracer_spec_`). The Chemistry top-level library (`GEOS_ChemGridComp.F90`, which adds
+> this component) is present but not compiled on this line: the `esma_add_library` block that builds it is commented out in
+> `../CMakeLists.txt`. Statements about it describe the file as it is. `Chem_Shared`, which `TR` lists as a dependency, is
+> not built on this line either (the `Shared` directory is in the commented-out list).
 
 ## Directory and file map
 
@@ -22,12 +29,12 @@ This document does not repeat it. The repository holds one gridded component mod
 | `TR_GravSetMod.F90` | Module `TR_GravSetMod`, public `TR_GMI_GravitationalSettling`; gravitational settling of aerosols |
 | `TR_GridComp.rc` | Component-level resource file; one key, `strict_tracer_timing:` |
 | `TR_Registry.rc` | List of tracers to run: table `TR_table::` (name, units, long name) |
-| `TR_GridComp---<tracer>.rc` | One resource file per tracer (about 45 files); source, sink and removal parameters |
-| `TR_ExtData.yaml`, `TR_ExtData.rc` | ExtData (MAPL external data component) specifications of the files that feed the `SRC_2D_*`, `SRC_3D_*`, mask and vegetation imports; yaml and legacy rc forms |
+| `TR_GridComp---<tracer>.rc` | One resource file per tracer (41 files on this line); source, sink and removal parameters |
+| `TR_ExtData.yaml`, `TR_ExtData.rc` | ExtData (MAPL external data component) specifications of the files that feed the `SRC_2D_*`, `SRC_3D_*`, region-mask and vegetation imports; yaml and legacy rc forms |
 | `CMakeLists.txt` | Builds library `TR` from the four `.F90` files; installs every `*.rc`, `*.yaml` into `etc` |
 | `ChangeLog`, `CHANGELOG.md`, `README.md`, `.circleci`, `.github` | Housekeeping; `README.md` is one line |
 
-The `.F90` module sizes are about 5,500 lines (`TR_GridCompMod.F90`) and about 1,000 lines each for the two GMI-derived modules.
+The `.F90` module sizes are about 5,400 lines (`TR_GridCompMod.F90`) and about 1,000 lines each for the two GMI-derived modules.
 
 ## 1. Purpose
 
@@ -49,8 +56,8 @@ The tracer list and each tracer's behaviour come from resource files, not from c
   are supplied by connectivities made above Chemistry (Physics or the Atmosphere level) or by ExtData;
   this repository does not make them.
 - The parent re-exports nothing from `TR` by explicit name that this review found (grep of `../GEOS_ChemGridComp.F90`
-  for `TR` exports found only the connectivities above and the `TR` provider name in `GetProvider_`, see the parent document).
-  The tracers leave `TR` as friendly internal fields (section 4).
+  for `TR` exports found only the connectivities above and the `TR` provider name in `GetProvider_`).
+  The tracers leave `TR` as friendly internal fields (see State below).
 
 ## 3. Entry points
 
@@ -88,14 +95,13 @@ Contained helper routines of `TR_run_tracer_` (`TR_GridCompMod.F90`): `impose_su
 - **Internal state**: one three-dimensional tracer per registry entry, added with `MAPL_AddInternalSpec` (`ADD2EXPORT=.TRUE.`, so each is
   also an export), `FRIENDLYTO = 'DYNAMICS:TURBULENCE[:MOIST]:<component name>'`; the `MOIST` entry is left out when the tracer's
   `GOCART_convection:` is true, because `TR` then applies convection itself (`TR_GridCompMod.F90`, SetServices). Chemistry gathers these into
-  `CHEM_TRACERS` (see parent document, "Friendly tracers"). Internal state is checkpointed by default; no `RESTART` option is set on the
+  `CHEM_TRACERS` (see the parent's friendly-tracer handling in `../GEOS_ChemGridComp.F90`). Internal state is checkpointed by default; no `RESTART` option is set on the
   tracer specs.
 - **Imports**: declared in SetServices. Fixed set: meteorology (`T`, `Q`, `PLE`, `ZLE`, `DELP`, `AIRDENS`, `AIRDENS_DRYP`, `TROPP`, `DQDT`, `RH2`),
   precipitation and convection (`PFL_CN`, `PFL_LSAN`, `PFI_LSAN`, `CN_PRCP`, `NCN_PRCP`, `CNV_MFD`, `CNV_MFC`, `QLCN`, `QICN`),
   surface and boundary layer (`LWI`, `T2M`, `Z0H`, `SWNDSRF`, `USTAR`, `FRLAKE`, `FROCEAN`, `FRACI`, `FRLANDICE`, `TSOIL1`, `SNOWDP`, `ZPBL`, `PPBL`, `SH`, `AREA`),
   `CLDTT`, and the GMI ozone link `OX_TR`, `DD_OX`. All are `RestartSkip` except `CLDTT`.
-  Conditional imports: `SRC_2D_<tracer>` / `SRC_3D_<tracer>` (when `src_mode:` is `file2d` / `file3d`), `SNK_HORIZ_MASK_<tracer>` (when `snk_horiz: mask`),
-  one region-mask import per distinct `regions_ExtData_entry:`, `stOX_loss` (when a tracer has `snk_mode: chemical_loss` and `loss_species: OX`),
+  Conditional imports: `SRC_2D_<tracer>` / `SRC_3D_<tracer>` (when `src_mode:` is `file2d` / `file3d`), one region-mask import per distinct `regions_ExtData_entry:`, `stOX_loss` (when a tracer has `snk_mode: chemical_loss` and `loss_species: OX`),
   and `TR_VEG_FRAC`, `TR_LAI_FRAC`.
 - **Exports** besides the tracers: `TR_DELZ`; per tracer `OVP10_`, `OVP14_`, `STtend_`, `STtendVsum_`, `DDtend_`, `WRtend_`, `WRtendVsum_`, `CVtend_`,
   `CLtend_`, `CLtendVsum_`; and when the source or sink mode asks, `EM_`, `PRtend_` (for `decay_of_another_species`) and `DKtend_`
@@ -110,7 +116,7 @@ Contained helper routines of `TR_run_tracer_` (`TR_GridCompMod.F90`): `impose_su
 
 ## 5. Configuration that changes structure
 
-- `ENABLE_TR` in the parent's `GEOS_ChemGridComp.rc` (parent document, section 3).
+- `ENABLE_TR` in the parent's `GEOS_ChemGridComp.rc` (`../GEOS_ChemGridComp.rc`).
 - `TR_Registry.rc`, table `TR_table::`: every row is run, and for each row `TR_GridComp---<name>.rc` must exist in the run directory
   (`TR_GridCompMod.F90`, SetServices; registry header comments). Shipped table: `aoa`, `e90`, `Rn222`, `CH3I`.
 - Per-tracer file `TR_GridComp---<tracer>.rc` (examples `TR_GridComp---aoa.rc`, `TR_GridComp---Be10.rc`). Key families, all read in `TR_init_tracer_spec_`:
@@ -121,11 +127,11 @@ Contained helper routines of `TR_run_tracer_` (`TR_GridCompMod.F90`): `impose_su
   - Removal schemes: `GMI_dry_deposition:`, `GMI_wet_removal:` and the `GMI_*` parameters; `GOCART_wet_removal:`, `GOCART_convection:`,
     `GOCART_settling:`, `GOCART_dry_deposition:` and the `GOCART_*` parameters. In `aoa` they are absent; in `Be10` the GOCART ones are on and the `GMI_*` lines are comments.
 - `strict_tracer_timing:` in `TR_GridComp.rc` (diagnostic barriers only).
-- The restart file names come from the parent's `TR_INTERNAL_RESTART_FILE`, `TR_IMPORT_RESTART_FILE` (parent document, section 3).
+- The restart file names come from the parent's `TR_INTERNAL_RESTART_FILE`, `TR_IMPORT_RESTART_FILE` (`../GEOS_ChemGridComp.rc`).
 
 ## 6. Dependencies
 
-- Library `TR` links `MAPL GMAO_mpeu Chem_Shared GEOS_Shared esmf` (`CMakeLists.txt`).
+- Library `TR` links `MAPL GMAO_mpeu Chem_Shared GEOS_Shared esmf` (`CMakeLists.txt`). `Chem_Shared` is not built on this line (it is in the commented-out `Shared` entry of `../CMakeLists.txt`).
 - From `Chem_Shared`: `WetRemovalMod` (`WetRemovalGOCART`), `ConvectionMod` (`convection`, `set_vud`), `Chem_SettlingMod` (`Chem_Settling2`),
   `DryDepositionMod` (`DryDepositionGOCART`), `VegLaiMod` (`Decode_Land_Types`, `Decode_XLAI`), `GmiTimeControl_mod` (`GetSecondsFromJanuary1`, used in `TR_run_tracer_`), `SZA_from_MAPL_mod` (`compute_SZA`, used in `TR_GMI_settle_and_depos`) (`TR_GridCompMod.F90`, `USE` lines; the last two are in `../Shared/Chem_Shared`).
   Also `Chem_Mod`, `Chem_ArrayMod`, `Runtime_RegistryMod`, `Chem_UtilMod`, `OVP` (overpass masks), `m_inpak90`, `m_die`.
@@ -139,7 +145,7 @@ Contained helper routines of `TR_run_tracer_` (`TR_GridCompMod.F90`): `impose_su
 - Removal exports (`STtend_`, `DDtend_`, `WRtend_`, `CVtend_`, `CLtend_`) are declared for every tracer regardless of the flags: the `IF` guards in
   SetServices are commented out. `lai_needed` is therefore always true, so `TR_VEG_FRAC` and `TR_LAI_FRAC` are always imported, though they are only decoded in Run_ when some tracer has `GMI_dry_deposition:`.
 - Adding a tracer needs a registry row *and* a `TR_GridComp---<name>.rc`; for `file2d` / `file3d` sources also an ExtData entry
-  `SRC_2D_<name>` / `SRC_3D_<name>`; for `mask` sinks or region constraints an ExtData mask entry.
+  `SRC_2D_<name>` / `SRC_3D_<name>`; for region constraints an ExtData mask entry (`regions_ExtData_entry:`).
 - Units: the code distinguishes mass (`kg kg-1`) and volume (`mol mol-1`) mixing ratio from the registry `units` string only; any other string is
   `OTHER_UNITS` (`TR_init_tracer_spec_`).
 - A tracer's friendly list drops `MOIST` when `GOCART_convection:` is true; changing that flag changes which parent applies convection to the tracer.
@@ -159,4 +165,4 @@ See [decisions.md](decisions.md).
 - `OX_TR`, `DD_OX` are imported unconditionally, while `stOX_loss` is imported only when needed; the Chemistry connectivity to `OX_TR` is made only if `GMICHEM`
   is enabled. *Unverified:* what ExtData or default fills `OX_TR` when `GMICHEM` is off (the code comment says "Add these entries to ExtData.rc").
 - The Run_ guard against negative mixing ratios (`where(q < 0) q = 1.0e-20`) sits under `#if (0)`.
-- Where `TR_run_tracer_` needs a precursor tracer to run before a dependent one, order relies on registry order (section 4).
+- Where `TR_run_tracer_` needs a precursor tracer to run before a dependent one, order relies on registry order (see State above).

@@ -1,8 +1,8 @@
 # TR: previous architectural decisions
 
 **Audience:** coding agents and developers working on `TR`.
-**Describes:** the MAPL2 line, branch `develop`.
-**Verified against:** `TR` @ `9e895f9` (2026-11-06).
+**Describes:** the MAPL3 line, branch `release/MAPL-v3`.
+**Verified against:** `TR` @ `f4da9bc` (2026-11-06).
 
 ### Tracer list and behaviour come from resource files
 - Pattern: the tracers are the rows of `TR_table::` in `TR_Registry.rc`; each has its own `TR_GridComp---<name>.rc`, read in SetServices and again in `TR_init_tracer_spec_` (`TR_GridCompMod.F90`; `TR_Registry.rc`).
